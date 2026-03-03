@@ -18,6 +18,9 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    outputs:   # needed to set output for job not just step 
+      script-file: ${{ steps.publish.outputs.script-file }}  # steps.id.outputs.name  
+                   # context needed to set output for job not just step 
     steps:
       - name: Get code
         uses: actions/checkout@v3
@@ -25,8 +28,14 @@ jobs:
         run: npm ci
       - name: Build website
         run: npm run build
-      - name: Upload artifacts  # job output 
-        uses: actions/upload-artifact@v7 
+      - name: Publish js filename     # output (value that other jobs can then access)
+        id: publish # id needed to access the data from this step 
+        run: find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';' # linux command to output the filename 
+                                                        # give it a name 'script-file' - doesn't have to match the `outputs` name at the top of job
+                                                        # just a placeholder 
+                                     # alternative syntax: echo '::set-output name=script-file::{}' ';'
+      - name: Upload artifacts  # job artifact  (files)
+        uses: actions/upload-artifact@v7  
         with:
           name: dist-files      # what to name it
           path: dist
@@ -46,6 +55,8 @@ jobs:
         with:
           name: dist-files  # ensures we download the right artifacts (unzips the file)
       - name: Output contents
-        run: ls             # we lose the dist folder
+        run: ls             # we lose the dist folder (ls outputs the contents of dist)
+      - name: Output filename    # get output from build job 
+        run: echo "${{ needs.build.outputs.script-file }}"
       - name: Deploy
         run: echo "Deploying..."
