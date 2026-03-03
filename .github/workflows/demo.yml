@@ -29,13 +29,23 @@ jobs:
         uses: actions/upload-artifact@v7 
         with:
           name: dist-files      # what to name it
-          path: |               # where to store it (can be multiple)
-            dist
-            package.json
+          path: dist
+          # path: |               # where to store it (can be multiple)
+          #   dist
+          #   package.json
+
+          # we can download the uploaded artifacts manually from github under the wf run 
+          # or use in the deploy job
 
   deploy:
-    needs: build
+    needs: build     # essential as we need the artifacts first
     runs-on: ubuntu-latest
     steps:
+      - name: Get build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: dist-files  # ensures we download the right artifacts (unzips the file)
+      - name: Output contents
+        run: ls             # we lose the dist folder
       - name: Deploy
         run: echo "Deploying..."
